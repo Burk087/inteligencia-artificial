@@ -4,28 +4,30 @@ import psutil
 from queue import PriorityQueue
 from collections import deque
 
-# Caminho do arquivo CSV com os puzzles
+# caminho do arquivo csv com os puzzles
 CAMINHO_CSV = '/home/luiz/Área de Trabalho/ed02/ed02-puzzle8.csv'
 
-# Estado objetivo
+# estado objetivo que estamos tentando alcançar
 ESTADO_OBJETIVO = '123456780'
 
 def ler_puzzles(caminho):
-    """Lê os puzzles a partir do arquivo CSV."""
+    #lê os puzzles a partir do arquivo csv
     puzzles = []
     with open(caminho, newline='', encoding='utf-8') as arquivo:
         leitor = csv.DictReader(arquivo)
         for linha in leitor:
+            # junta os valores das colunas em uma única string
             estado = ''.join(linha[coluna] for coluna in linha)
             puzzles.append(estado)
     return puzzles
 
 def gerar_vizinhos(estado):
-    """Gera os vizinhos de um estado."""
+    # gera os vizinhos de um estado, trocando a posição do '0'
     vizinhos = []
-    indice = estado.index('0')
-    linha, coluna = divmod(indice, 3)
+    indice = estado.index('0')  
+    linha, coluna = divmod(indice, 3)  
 
+    # possíveis movimentos para o '0' (cima, baixo, esquerda, direita)
     movimentos = {
         'cima': -3,
         'baixo': 3,
@@ -33,13 +35,15 @@ def gerar_vizinhos(estado):
         'direita': 1
     }
 
+    # verifica os movimentos possíveis
     for direcao, deslocamento in movimentos.items():
         novo_indice = indice + deslocamento
-        if direcao == 'cima' and linha == 0: continue
-        if direcao == 'baixo' and linha == 2: continue
-        if direcao == 'esquerda' and coluna == 0: continue
-        if direcao == 'direita' and coluna == 2: continue
+        if direcao == 'cima' and linha == 0: continue  
+        if direcao == 'baixo' and linha == 2: continue  
+        if direcao == 'esquerda' and coluna == 0: continue  
+        if direcao == 'direita' and coluna == 2: continue  
 
+        # troca as posições do '0' e do vizinho
         novo_estado = list(estado)
         novo_estado[indice], novo_estado[novo_indice] = novo_estado[novo_indice], novo_estado[indice]
         vizinhos.append(''.join(novo_estado))
@@ -47,9 +51,11 @@ def gerar_vizinhos(estado):
     return vizinhos
 
 def heuristica_mal_colocadas(estado):
+    #calcula a heurística de mal colocadas (número de peças fora do lugar)
     return sum(1 for i, c in enumerate(estado) if c != '0' and c != ESTADO_OBJETIVO[i])
 
 def heuristica_manhattan(estado):
+    #calcula a heurística de manhattan (distância das peças até o seu lugar correto)
     distancia = 0
     for i, valor in enumerate(estado):
         if valor == '0':
@@ -61,14 +67,15 @@ def heuristica_manhattan(estado):
     return distancia
 
 def busca_largura(inicio):
-    visitados = set()
-    fila = deque([(inicio, [])])
+    #implementa a busca em largura
+    visitados = set()  
+    fila = deque([(inicio, [])])  
 
     while fila:
-        estado, caminho = fila.popleft()
-        if estado == ESTADO_OBJETIVO:
+        estado, caminho = fila.popleft()  
+        if estado == ESTADO_OBJETIVO:  
             return caminho + [estado]
-        if estado in visitados:
+        if estado in visitados:  
             continue
         visitados.add(estado)
         for vizinho in gerar_vizinhos(estado):
@@ -77,14 +84,15 @@ def busca_largura(inicio):
     return None
 
 def busca_profundidade(inicio, limite=30):
-    visitados = set()
-    pilha = [(inicio, [])]
+    #implementa a busca em profundidade com limite de profundidade
+    visitados = set()  
+    pilha = [(inicio, [])]  
 
     while pilha:
-        estado, caminho = pilha.pop()
-        if estado == ESTADO_OBJETIVO:
+        estado, caminho = pilha.pop()  
+        if estado == ESTADO_OBJETIVO:  
             return caminho + [estado]
-        if len(caminho) >= limite or estado in visitados:
+        if len(caminho) >= limite or estado in visitados:  
             continue
         visitados.add(estado)
         for vizinho in gerar_vizinhos(estado):
@@ -93,15 +101,16 @@ def busca_profundidade(inicio, limite=30):
     return None
 
 def busca_gulosa(inicio):
-    visitados = set()
-    fila = PriorityQueue()
-    fila.put((heuristica_mal_colocadas(inicio), inicio, []))
+    # implementa a busca gulosa
+    visitados = set()  
+    fila = PriorityQueue()  
+    fila.put((heuristica_mal_colocadas(inicio), inicio, []))  
 
     while not fila.empty():
-        _, estado, caminho = fila.get()
-        if estado == ESTADO_OBJETIVO:
+        _, estado, caminho = fila.get()  
+        if estado == ESTADO_OBJETIVO:  
             return caminho + [estado]
-        if estado in visitados:
+        if estado in visitados:  
             continue
         visitados.add(estado)
         for vizinho in gerar_vizinhos(estado):
@@ -110,15 +119,16 @@ def busca_gulosa(inicio):
     return None
 
 def busca_a_estrela(inicio):
-    visitados = set()
-    fila = PriorityQueue()
-    fila.put((heuristica_manhattan(inicio), 0, inicio, []))
-
+    # implementa a busca A*
+    visitados = set() 
+    fila = PriorityQueue()  
+    fila.put((heuristica_manhattan(inicio), 0, inicio, []))  
+    
     while not fila.empty():
-        f, g, estado, caminho = fila.get()
-        if estado == ESTADO_OBJETIVO:
+        f, g, estado, caminho = fila.get()  
+        if estado == ESTADO_OBJETIVO: 
             return caminho + [estado]
-        if estado in visitados:
+        if estado in visitados:  
             continue
         visitados.add(estado)
         for vizinho in gerar_vizinhos(estado):
@@ -129,15 +139,16 @@ def busca_a_estrela(inicio):
     return None
 
 def medir(algoritmo, estado_inicial):
-    processo = psutil.Process()
-    memoria_antes = processo.memory_info().rss
-    inicio_tempo = time.time()
+    # mede o desempenho de um algoritmo (tempo e memória)
+    processo = psutil.Process()  
+    memoria_antes = processo.memory_info().rss  
+    inicio_tempo = time.time()  
 
-    caminho = algoritmo(estado_inicial)
+    caminho = algoritmo(estado_inicial)  
 
-    fim_tempo = time.time()
-    memoria_depois = processo.memory_info().rss
-    memoria_usada = max(0, (memoria_depois - memoria_antes) / 1024)
+    fim_tempo = time.time()  
+    memoria_depois = processo.memory_info().rss  
+    memoria_usada = max(0, (memoria_depois - memoria_antes) / 1024)  
 
     return {
         'passos': len(caminho) - 1 if caminho else -1,
@@ -146,7 +157,8 @@ def medir(algoritmo, estado_inicial):
     }
 
 def principal():
-    puzzles = ler_puzzles(CAMINHO_CSV)
+    # função principal que executa o programa
+    puzzles = ler_puzzles(CAMINHO_CSV)  
     resultados = []
 
     for indice, puzzle in enumerate(puzzles):
@@ -162,6 +174,7 @@ def principal():
             '> Algoritmo A*': medir(busca_a_estrela, puzzle)
         }
 
+        # exibe os resultados de cada algoritmo
         for nome, dados in resultado.items():
             print(f"{nome}:")
             if dados['passos'] == -1:
@@ -174,4 +187,4 @@ def principal():
         resultados.append(resultado)
 
 if __name__ == '__main__':
-    principal()
+    principal()  # chama a função principal para rodar o programa
