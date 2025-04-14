@@ -11,7 +11,7 @@ CAMINHO_CSV = '/home/luiz/Área de Trabalho/ed02/ed02-puzzle8.csv'
 ESTADO_OBJETIVO = '123456780'
 
 def ler_puzzles(caminho):
-    #lê os puzzles a partir do arquivo csv
+    #le os puzzles a partir do arquivo csv
     puzzles = []
     with open(caminho, newline='', encoding='utf-8') as arquivo:
         leitor = csv.DictReader(arquivo)
